@@ -1,0 +1,14 @@
+# .gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyc
+venv/
+
+# Node.js
+node_modules/
+*.log
+*.log.*
