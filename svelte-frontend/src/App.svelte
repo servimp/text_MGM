@@ -10,12 +10,18 @@
 	let filterTags = "";
 	let textList = [];
 	let availableTags = [];
+	let nlpQuery = "";
+
 
 	let selectedTag = { value: "" };
 
 	onMount(async () => {
 	availableTags = await fetchAvailableTags();
 	});
+
+	async function handleNLPQuery() {
+  // This function will be implemented later
+}
 
 	// Wrapper functions for API calls
 	async function submit() {
@@ -84,6 +90,19 @@
 		class="w-1/2 min-w-[200px] p-2 rounded-md bg-white mb-4"
 	/>
 	<button on:click="{filter}" class="bg-blue-600 text-white px-4 py-2 rounded-md mb-4">Filter</button>
+
+
+	<h2 class="text-xl font-semibold mt-12 mb-4">Natural Language Query</h2>
+	<input
+	  type="text"
+	  bind:value="{nlpQuery}"
+	  placeholder="Enter your natural language query"
+	  class="w-1/2 min-w-[200px] p-2 rounded-md bg-white mb-4"
+	/>
+	<button on:click="{handleNLPQuery}" class="bg-blue-600 text-white px-4 py-2 rounded-md mb-4">Submit Query</button>
+	
+
+
 	<button on:click="{getAllTexts}" class="bg-blue-600 text-white px-4 py-2 rounded-md">Get All Texts</button>
 
 	<ul class="list-none p-0 mt-8 w-full flex flex-col items-center">
