@@ -7,8 +7,10 @@ from openai_helper import process_nlp_query
 
 app = FastAPI()
 
+
 class NLPGPT4Response(BaseModel):
     response: str
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -22,6 +24,7 @@ class TextData(BaseModel):
     text: str
     tags: List[str] = []
 
+
 async def get_gpt4_response(query: str) -> NLPGPT4Response:
     try:
         assistant_response = await process_nlp_query(query)
@@ -29,6 +32,8 @@ async def get_gpt4_response(query: str) -> NLPGPT4Response:
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
 
 @app.get('/get_texts/')
 async def get_texts_route():
@@ -52,6 +57,7 @@ async def update_tags_route(text_id: str, tags: List[str]):
 
 class NLPQuery(BaseModel):
     query: str
+
 
 @app.post("/process_nlp_query/", response_model=NLPGPT4Response)
 async def process_nlp_query_route(nlp_query: NLPQuery):

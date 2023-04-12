@@ -13,12 +13,18 @@ def find_texts_by_tags(tag_list, search):
     query = {}
     if tag_list:
         query["tags"] = {"$in": tag_list}
+        print(f"Tags query: {query}")  # Add this line
     if search:
         query["text"] = {"$regex": search, "$options": "i"}
+        print(f"Search query: {query}")  # Add this line
+
     texts = []
     for text in collection.find(query):
         text['_id'] = str(text['_id'])
         texts.append(text)
+        
+    print(f"Found texts in find_texts_by_tags: {texts}")  # Add this line
+
     return texts
 
 
