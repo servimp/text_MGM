@@ -1,5 +1,7 @@
 import axios from "axios";
 
+const API_URL = "http://localhost:8000";
+
 export async function fetchAvailableTags() {
   try {
     const response = await axios.get("http://localhost:8000/get_texts/");
@@ -10,7 +12,7 @@ export async function fetchAvailableTags() {
   }
 }
 
-export async function handleSubmit(inputText, inputTags, selectedTag) {
+export async function handleSubmit(inputText, inputTags, selectedTag, selectedTextTag) {
   try {
     const tags = [
       ...inputTags
@@ -18,8 +20,13 @@ export async function handleSubmit(inputText, inputTags, selectedTag) {
         .map((tag) => tag.trim())
         .filter((tag) => tag.length > 0), // Filter out empty strings
     ];
+
     if (selectedTag && selectedTag.value) {
-      tags.push(selectedTag.value); // Push the value of the selected tag instead of the entire object
+      tags.push(selectedTag.value);
+    }
+
+    if (selectedTextTag && selectedTextTag.value) {
+      tags.push({ type: "text", value: selectedTextTag.value });
     }
 
     const response = await axios.post("http://localhost:8000/add_text/", {
@@ -37,19 +44,22 @@ export async function handleSubmit(inputText, inputTags, selectedTag) {
   }
 }
 
-export async function handleFilter(filterTags) {
+
+export async function handleFilter(tags, text) {
   try {
-    if (!filterTags) {
-      return [];
-    }
-    const response = await axios.get("http://localhost:8000/get_texts_by_tags/", {
-      params: { tags: filterTags },
-    });
-    return response.data;
+    const response = await axios.get(
+      `${API_URL}/get_texts_by_tags_and_text/?tags=${encodeURIComponent(
+        tags
+      )}&search=${encodeURIComponent(text)}`
+    );
+    return response.data || [];
   } catch (error) {
     console.error("Error filtering texts:", error);
+    throw error;
   }
 }
+
+
 
 export async function updateTags(textId, newTags) {
   try {
@@ -88,5 +98,16 @@ export async function handleAddTags(textId, newTags) {
     console.error("Error adding tags:", error);
   }
 }
+
+export async function handleNLPQuery(query) {
+  try {
+    const response = await axios.post("http://localhost:8000/process_nlp_query/", { query });
+    return response.data;
+  } catch (error) {
+    console.error("Error handling NLP query:", error);
+    throw error;
+  }
+}
+
 
 

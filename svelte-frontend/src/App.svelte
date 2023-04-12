@@ -11,7 +11,11 @@
 	let textList = [];
 	let availableTags = [];
 	let nlpQuery = "";
+	let nlpQueryResult = "";
 
+	let selectedTextTag = { value: "" };
+
+	let filterText = "";
 
 	let selectedTag = { value: "" };
 
@@ -20,22 +24,33 @@
 	});
 
 	async function handleNLPQuery() {
-  // This function will be implemented later
+  try {
+    nlpQueryResult = await handleNLPQuery(nlpQuery);
+  } catch (error) {
+    console.error("Error handling NLP query:", error);
+  }
 }
 
 	// Wrapper functions for API calls
 	async function submit() {
-		const newText = await handleSubmit(inputText, inputTags, selectedTag);
-		textList.unshift(newText);
-		inputText = "";
-		inputTags = "";
-		selectedTag = "";
-	}
+  const newText = await handleSubmit(inputText, inputTags, selectedTag, selectedTextTag);
+  textList.unshift(newText);
+  inputText = "";
+  inputTags = "";
+  selectedTag = "";
+  selectedTextTag = "";
+}
 
-	async function filter() {
-		const filteredTextList = await handleFilter(filterTags);
-		textList = filteredTextList;
-	}
+
+async function filter() {
+  if (filterTags.trim().length > 0 || filterText.trim().length > 0) {
+    const filteredTextList = await handleFilter(filterTags, filterText);
+    textList = filteredTextList;
+  } else {
+    textList = await handleGetAllTexts();
+  }
+}
+
 
 	async function getAllTexts() {
 		const allTexts = await handleGetAllTexts();
@@ -60,6 +75,18 @@
 			textList = textList.slice(); // Trigger reactivity by creating a new reference
 		}
 	}
+
+
+	async function filterTextChanged() {
+  if (filterTags.trim().length > 0 || filterText.trim().length > 0) {
+    textList = await handleFilter(filterTags, filterText);
+  } else {
+    textList = await handleGetAllTexts();
+  }
+}
+
+
+
 </script>
 
 <!-- App.svelte -->
@@ -69,6 +96,17 @@
 	</div>
 
 	<h1 class="text-3xl font-semibold mb-6">Text Management App</h1>
+
+  <input
+  type="text"
+  bind:value="{filterText}"
+  placeholder="Enter text to filter by"
+  class="w-1/2 min-w-[200px] p-2 rounded-md bg-white mb-4"
+  on:input="{filter}"
+/>
+
+  
+
 	<textarea
 		rows="10"
 		bind:value="{inputText}"
@@ -81,6 +119,12 @@
 		placeholder="Enter tags separated by commas"
 		class="w-1/2 min-w-[200px] p-2 rounded-md bg-white mb-4"
 	/>
+
+	<div class="w-1/2 min-w-[200px] mb-4">
+		<Select items="{textList}" bind:value="{selectedTextTag}" placeholder="Select a text as tag" />
+	  </div>
+	  
+
 	<button on:click="{submit}" class="bg-blue-600 text-white px-4 py-2 rounded-md">Submit</button>
 	<h2 class="text-xl font-semibold mt-12 mb-4">Filter texts by tags</h2>
 	<input
@@ -89,7 +133,8 @@
 		placeholder="Enter tags separated by commas"
 		class="w-1/2 min-w-[200px] p-2 rounded-md bg-white mb-4"
 	/>
-	<button on:click="{filter}" class="bg-blue-600 text-white px-4 py-2 rounded-md mb-4">Filter</button>
+	<button on:click="{filterTextChanged}" class="bg-blue-600 text-white px-4 py-2 rounded-md mb-4">Filter</button>
+
 
 
 	<h2 class="text-xl font-semibold mt-12 mb-4">Natural Language Query</h2>
@@ -101,7 +146,10 @@
 	/>
 	<button on:click="{handleNLPQuery}" class="bg-blue-600 text-white px-4 py-2 rounded-md mb-4">Submit Query</button>
 	
-
+	<p class="mt-4">
+		<strong class="font-semibold">NLP Query Result:</strong> {nlpQueryResult}
+	  </p>
+	  
 
 	<button on:click="{getAllTexts}" class="bg-blue-600 text-white px-4 py-2 rounded-md">Get All Texts</button>
 

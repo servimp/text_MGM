@@ -9,12 +9,18 @@ def create_text(text_data):
     result = collection.insert_one(text_data.dict())
     return {"inserted_id": str(result.inserted_id)}
 
-def find_texts_by_tags(tag_list):
+def find_texts_by_tags(tag_list, search):
+    query = {}
+    if tag_list:
+        query["tags"] = {"$in": tag_list}
+    if search:
+        query["text"] = {"$regex": search, "$options": "i"}
     texts = []
-    for text in collection.find({"tags": {"$in": tag_list}}):
+    for text in collection.find(query):
         text['_id'] = str(text['_id'])
         texts.append(text)
     return texts
+
 
 def update_text_tags(text_id, tags):
     result = collection.update_one({"_id": ObjectId(text_id)}, {"$set": {"tags": tags}})
