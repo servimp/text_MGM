@@ -1,14 +1,96 @@
 <script>
+	import { onMount } from "svelte";
 	import Select from "svelte-select";
-	import {
-	  inputText, inputTags, filterTags, textList, availableTags, nlpQuery, nlpQueryResult,
-	  selectedTextTag, filterText, selectedTag,
-	  onSubmitQuery, submit, filter, getAllTexts, addTags, updateTextTags, filterTextChanged
-	} from './AppLogic.js';
-  </script>
-  
-  <!-- The rest of your App.svelte code with views and interface elements -->
-  
+	import { handleSubmit, handleFilter, updateTags, handleAddTags, fetchAvailableTags, handleGetAllTexts, handleNLPQuery } from './api.js';
+
+
+
+	let inputText = "";
+	let inputTags = "";
+	let filterTags = "";
+	let textList = [];
+	let availableTags = [];
+	let nlpQuery = "";
+	let nlpQueryResult = "";
+
+	let selectedTextTag = { value: "" };
+
+	let filterText = "";
+
+	let selectedTag = { value: "" };
+
+	onMount(async () => {
+	availableTags = await fetchAvailableTags();
+	});
+
+    async function onSubmitQuery() {
+  try {
+    const nlpResponse = await handleNLPQuery(nlpQuery);
+    console.log('NLP response:', nlpResponse);
+    nlpQueryResult = nlpResponse.response;
+  } catch (error) {
+    console.error('Error handling NLP query:', error);
+  }
+}
+
+
+	// Wrapper functions for API calls
+	async function submit() {
+  const newText = await handleSubmit(inputText, inputTags, selectedTag, selectedTextTag);
+  textList.unshift(newText);
+  inputText = "";
+  inputTags = "";
+  selectedTag = "";
+  selectedTextTag = "";
+}
+
+
+async function filter() {
+  if (filterTags.trim().length > 0 || filterText.trim().length > 0) {
+    const filteredTextList = await handleFilter(filterTags, filterText);
+    textList = filteredTextList;
+  } else {
+    textList = await handleGetAllTexts();
+  }
+}
+
+
+	async function getAllTexts() {
+		const allTexts = await handleGetAllTexts();
+		textList = allTexts;
+	}
+
+	async function addTags(textId, newTags) {
+		const addedTags = await handleAddTags(textId, newTags);
+		textList = textList.map((text) => {
+			if (text._id === textId) {
+				text.tags.push(...addedTags);
+			}
+			return text;
+		});
+	}
+
+	async function updateTextTags(textId, newTags) {
+		const updatedTags = await updateTags(textId, newTags);
+		const textToUpdateIndex = textList.findIndex((text) => text._id === textId);
+		if (textToUpdateIndex !== -1) {
+			textList[textToUpdateIndex].tags = updatedTags;
+			textList = textList.slice(); // Trigger reactivity by creating a new reference
+		}
+	}
+
+
+	async function filterTextChanged() {
+  if (filterTags.trim().length > 0 || filterText.trim().length > 0) {
+    textList = await handleFilter(filterTags, filterText);
+  } else {
+    textList = await handleGetAllTexts();
+  }
+}
+
+
+
+</script>
 
 <!-- App.svelte -->
 <main class="min-h-screen bg-gray-100 flex flex-col items-center justify-center py-10">
@@ -108,4 +190,3 @@
 
 <!-- Add this line to import the Tailwind CSS styles -->
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.17/dist/tailwind.min.css" rel="stylesheet">
-

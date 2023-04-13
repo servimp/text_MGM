@@ -1,12 +1,7 @@
 import openai
 import asyncio
 
-openai.api_key = "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"
-
-import openai
-import asyncio
-
-openai.api_key = "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"
+openai.api_key = "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"
 
 async def process_nlp_query(query: str):
     loop = asyncio.get_event_loop()
