@@ -1,163 +1,103 @@
 <script>
 	import { onMount } from "svelte";
 	import Select from "svelte-select";
-	import { handleSubmit, handleFilter, updateTags, handleAddTags, fetchAvailableTags, handleGetAllTexts, handleNLPQuery } from './api.js';
+	import { 
+        fetchAvailableTags,
+		fetchAvailableTextTags
+        } from './Api.js';
+    import { 
+        submit,
+        onSubmitQuery,
+        filterTextChanged,
+        getAllTexts,
+        updateTextTags,
+        addTags
+        } from './AppLogic.js'
 
+    import { 
+        nlpQuery,
+        selectedTag,
+        filterText,
+        inputText,
+        inputTags,
+        selectedTextTag,
+        filterTags,
+        availableTags,
+		availableTextTags,
+        textList,
+        nlpQueryResult
+     } from "./Store.js";    
 
-
-	let inputText = "";
-	let inputTags = "";
-	let filterTags = "";
-	let textList = [];
-	let availableTags = [];
-	let nlpQuery = "";
-	let nlpQueryResult = "";
-
-	let selectedTextTag = { value: "" };
-
-	let filterText = "";
-
-	let selectedTag = { value: "" };
-
-	onMount(async () => {
-	availableTags = await fetchAvailableTags();
-	});
-
-    async function onSubmitQuery() {
-  try {
-    const nlpResponse = await handleNLPQuery(nlpQuery);
-    console.log('NLP response:', nlpResponse);
-    nlpQueryResult = nlpResponse.response;
-  } catch (error) {
-    console.error('Error handling NLP query:', error);
-  }
-}
-
-
-	// Wrapper functions for API calls
-	async function submit() {
-  const newText = await handleSubmit(inputText, inputTags, selectedTag, selectedTextTag);
-  textList.unshift(newText);
-  inputText = "";
-  inputTags = "";
-  selectedTag = "";
-  selectedTextTag = "";
-}
-
-
-async function filter() {
-  if (filterTags.trim().length > 0 || filterText.trim().length > 0) {
-    const filteredTextList = await handleFilter(filterTags, filterText);
-    textList = filteredTextList;
-  } else {
-    textList = await handleGetAllTexts();
-  }
-}
-
-
-	async function getAllTexts() {
-		const allTexts = await handleGetAllTexts();
-		textList = allTexts;
-	}
-
-	async function addTags(textId, newTags) {
-		const addedTags = await handleAddTags(textId, newTags);
-		textList = textList.map((text) => {
-			if (text._id === textId) {
-				text.tags.push(...addedTags);
-			}
-			return text;
-		});
-	}
-
-	async function updateTextTags(textId, newTags) {
-		const updatedTags = await updateTags(textId, newTags);
-		const textToUpdateIndex = textList.findIndex((text) => text._id === textId);
-		if (textToUpdateIndex !== -1) {
-			textList[textToUpdateIndex].tags = updatedTags;
-			textList = textList.slice(); // Trigger reactivity by creating a new reference
-		}
-	}
-
-
-	async function filterTextChanged() {
-  if (filterTags.trim().length > 0 || filterText.trim().length > 0) {
-    textList = await handleFilter(filterTags, filterText);
-  } else {
-    textList = await handleGetAllTexts();
-  }
-}
-
-
+    onMount(async () => {
+      const tags = await fetchAvailableTags();
+    availableTags.set(tags);
+	const textTags = await fetchAvailableTextTags();
+    availableTextTags.set(textTags);
+    });
 
 </script>
 
 <!-- App.svelte -->
 <main class="min-h-screen bg-gray-100 flex flex-col items-center justify-center py-10">
 	<div class="w-1/2 min-w-[200px] mb-4">
-		<Select items="{availableTags}" bind:value="{selectedTag}" placeholder="Select a tag" />
+        <Select items={$availableTags} bind:value={$selectedTag} placeholder="Select a tag" />
 	</div>
 
 	<h1 class="text-3xl font-semibold mb-6">Text Management App</h1>
 
   <input
   type="text"
-  bind:value="{filterText}"
+  bind:value="{$filterText}"
   placeholder="Enter text to filter by"
   class="w-1/2 min-w-[200px] p-2 rounded-md bg-white mb-4"
-  on:input="{filter}"
+  on:input="{filterTextChanged}"
 />
-
-  
 
 	<textarea
 		rows="10"
-		bind:value="{inputText}"
+		bind:value="{$inputText}"
 		placeholder="Enter your text here..."
 		class="w-1/2 min-w-[200px] p-2 rounded-md bg-white resize-none mb-4"
 	></textarea>
 	<input
 		type="text"
-		bind:value="{inputTags}"
+		bind:value="{$inputTags}"
 		placeholder="Enter tags separated by commas"
 		class="w-1/2 min-w-[200px] p-2 rounded-md bg-white mb-4"
 	/>
 
 	<div class="w-1/2 min-w-[200px] mb-4">
-		<Select items="{textList}" bind:value="{selectedTextTag}" placeholder="Select a text as tag" />
-	  </div>
+		<Select items="{$availableTextTags}" bind:value="{$selectedTextTag}" placeholder="Select a text as tag (not yet implemented)" />
+	</div>
 	  
 
 	<button on:click="{submit}" class="bg-blue-600 text-white px-4 py-2 rounded-md">Submit</button>
 	<h2 class="text-xl font-semibold mt-12 mb-4">Filter texts by tags</h2>
 	<input
 		type="text"
-		bind:value="{filterTags}"
+		bind:value="{$filterTags}"
 		placeholder="Enter tags separated by commas"
 		class="w-1/2 min-w-[200px] p-2 rounded-md bg-white mb-4"
 	/>
 	<button on:click="{filterTextChanged}" class="bg-blue-600 text-white px-4 py-2 rounded-md mb-4">Filter</button>
 
-
-
 	<h2 class="text-xl font-semibold mt-12 mb-4">Natural Language Query</h2>
 	<input
 	  type="text"
-	  bind:value="{nlpQuery}"
+	  bind:value= { $nlpQuery }
 	  placeholder="Enter your natural language query"
 	  class="w-1/2 min-w-[200px] p-2 rounded-md bg-white mb-4"
 	/>
 	<button on:click="{onSubmitQuery}" class="bg-blue-600 text-white px-4 py-2 rounded-md mb-4">Submit Query</button>
 	
 	<p class="mt-4">
-		<strong class="font-semibold">NLP Query Result:</strong> {nlpQueryResult}
+		<strong class="font-semibold">NLP Query Result:</strong> {$nlpQueryResult}
 	  </p>
 	  
-
 	<button on:click="{getAllTexts}" class="bg-blue-600 text-white px-4 py-2 rounded-md">Get All Texts</button>
 
 	<ul class="list-none p-0 mt-8 w-full flex flex-col items-center">
-		{#each textList as textData}
+		{#each $textList as textData}
 		<li class="bg-white p-6 rounded-md shadow-lg w-1/2 min-w-[200px] mb-8">
 			<div class="mb-4">
 				<strong class="font-semibold">Text:</strong> {textData.text}
@@ -188,5 +128,3 @@ async function filter() {
 	</ul>
 </main>
 
-<!-- Add this line to import the Tailwind CSS styles -->
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.17/dist/tailwind.min.css" rel="stylesheet">

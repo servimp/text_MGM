@@ -1,25 +1,45 @@
 import openai
 import asyncio
+from dotenv import load_dotenv
+import os
+import json
+load_dotenv()
+from fastapi.responses import JSONResponse
 
-openai.api_key = "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"
+API_KEY = os.getenv("OPENAI_API_KEY")
 
-async def process_nlp_query(query: str):
+openai.api_key = API_KEY
+
+async def process_nlp_query(query: str, chat_context: list, model: str = "gpt-4"):
     loop = asyncio.get_event_loop()
+
+    # Remove timestamp and model from the context for the API request
+    api_chat_context = []
+    for message in chat_context:
+        api_message = {"role": message["role"], "content": message["content"]}
+        api_chat_context.append(api_message)
+
+    msg_ctx = api_chat_context
+    print(f"Query sent: {msg_ctx}")
 
     def _fetch_response():
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": query}],
-            max_tokens=100,
+            model=model,  # use provided model here
+            messages=api_chat_context,
+            max_tokens=2000,
             n=1,
             stop=None,
             temperature=0.5,
+            stream=True,
         )
         return response
 
     try:
         response = await loop.run_in_executor(None, _fetch_response)
-        return response['choices'][0]['message']['content'].strip()
+        for chunk in response:
+            chunk_data = json.dumps(chunk) + "\n"
+            print(f"Received chunk from OpenAI API: {chunk_data}")
+            yield chunk_data
     except Exception as e:
         print(f"Error processing NLP query: {e}")
         raise e

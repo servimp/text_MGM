@@ -4,11 +4,21 @@ const API_URL = "http://localhost:8000";
 
 export async function fetchAvailableTags() {
   try {
-    const response = await axios.get("http://localhost:8000/get_texts/");
+    const response = await axios.get(`${API_URL}/get_texts/`);
     const allTags = response.data.flatMap((textData) => textData.tags);
     return Array.from(new Set(allTags));
   } catch (error) {
-    console.error("Error fetching all texts:", error);
+    console.error("Error fetching all tags:", error);
+  }
+}
+
+export async function fetchAvailableTextTags() {
+  try {
+    const response = await axios.get(`${API_URL}/get_texts/`);
+    const allTags = response.data.flatMap((textData) => textData.tags);
+    return Array.from(new Set(allTags));
+  } catch (error) {
+    console.error("Error fetching all texts as tags:", error);
   }
 }
 
@@ -26,10 +36,10 @@ export async function handleSubmit(inputText, inputTags, selectedTag, selectedTe
     }
 
     if (selectedTextTag && selectedTextTag.value) {
-      tags.push({ type: "text", value: selectedTextTag.value });
+      tags.push(selectedTextTag.value);
     }
 
-    const response = await axios.post("http://localhost:8000/add_text/", {
+    const response = await axios.post(`${API_URL}/add_text/`, {
       text: inputText,
       tags,
     });
@@ -43,7 +53,6 @@ export async function handleSubmit(inputText, inputTags, selectedTag, selectedTe
     console.error("Error adding text:", error);
   }
 }
-
 
 export async function handleFilter(tags, text) {
   try {
@@ -65,7 +74,7 @@ export async function updateTags(textId, newTags) {
   try {
     const tags = newTags.split(",").map((tag) => tag.trim());
     const response = await axios.patch(
-      `http://localhost:8000/update_tags/${textId}`,
+      `${API_URL}/update_tags/${textId}`,
       tags,
       {
         headers: {
@@ -82,7 +91,7 @@ export async function updateTags(textId, newTags) {
 
 export async function handleGetAllTexts() {
   try {
-    const response = await axios.get("http://localhost:8000/get_texts/");
+    const response = await axios.get(`${API_URL}/get_texts/`);
     return response.data;
   } catch (error) {
     console.error("Error fetching all texts:", error);
@@ -92,7 +101,7 @@ export async function handleGetAllTexts() {
 export async function handleAddTags(textId, newTags) {
   try {
     const tags = newTags.split(",").map((tag) => tag.trim());
-    await axios.patch(`http://localhost:8000/add_tags/${textId}`, tags);
+    await axios.patch(`${API_URL}/add_tags/${textId}`, tags);
     return tags;
   } catch (error) {
     console.error("Error adding tags:", error);
@@ -101,12 +110,10 @@ export async function handleAddTags(textId, newTags) {
 
 export async function handleNLPQuery(query) {
   try {
-    const response = await axios.post("http://localhost:8000/process_nlp_query/", { query });
+    const response = await axios.post(`${API_URL}/process_nlp_query/`, { query });
     return response.data;
   } catch (error) {
     console.error("Error handling NLP query:", error);
     throw error;
   }
 }
-
-

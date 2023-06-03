@@ -1,91 +1,102 @@
-import { onMount } from "svelte";
-import { handleSubmit, handleFilter, updateTags, handleAddTags, fetchAvailableTags, handleGetAllTexts, handleNLPQuery } from './api.js';
+import { handleSubmit, handleFilter, updateTags, handleAddTags, handleGetAllTexts, handleNLPQuery } from './Api.js';
+import { get } from 'svelte/store';
+import { nlpQuery, nlpQueryResult, inputText, inputTags, selectedTag, selectedTextTag, filterTags, filterText, textList, availableTags, availableTextTags } from './Store.js';
 
-let inputText = "";
-let inputTags = "";
-let filterTags = "";
-let textList = [];
-let availableTags = [];
-let nlpQuery = "";
-let nlpQueryResult = "";
+async function getAllTexts() {
+  const allTexts = await handleGetAllTexts();
+  textList.set(allTexts);
+}
 
-let selectedTextTag = { value: "" };
-
-let filterText = "";
-
-let selectedTag = { value: "" };
-
-onMount(async () => {
-	availableTags = await fetchAvailableTags();
-	});
-
-	async function onSubmitQuery() {
+async function onSubmitQuery() {
   try {
-    const nlpResponse = await handleNLPQuery(nlpQuery);
+    console.log("nlpQuery es: ", get(nlpQuery) )
+    const nlpResponse = await handleNLPQuery(get(nlpQuery));
     console.log('NLP response:', nlpResponse);
-    nlpQueryResult = nlpResponse.response;
+    nlpQueryResult.set(nlpResponse.response);
   } catch (error) {
     console.error('Error handling NLP query:', error);
   }
 }
 
-	// Wrapper functions for API calls
-	async function submit() {
-  const newText = await handleSubmit(inputText, inputTags, selectedTag, selectedTextTag);
-  textList.unshift(newText);
-  inputText = "";
-  inputTags = "";
-  selectedTag = "";
-  selectedTextTag = "";
+async function submit() {
+  const newText = await handleSubmit(get(inputText), get(inputTags), get(selectedTag), get(selectedTextTag));
+  textList.update((texts) => {
+    texts.unshift(newText);
+    return texts;
+  });
+
+  // Update availableTags with new tags, if not already in the list
+  const newTags = get(inputTags)
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter((tag) => tag.length > 0);
+  
+  if (get(selectedTag) && get(selectedTag).value) {
+    newTags.push(get(selectedTag).value);
+  }
+
+  if (get(selectedTextTag) && get(selectedTextTag).value) {
+    availableTextTags.update((textTags) => {
+      if (!textTags.includes(get(selectedTextTag).value)) {
+        return [...textTags, get(selectedTextTag).value];
+      }
+      return textTags;
+    });
+  }
+
+  availableTags.update((tags) => {
+    newTags.forEach((tag) => {
+      if (!tags.includes(tag)) {
+        tags.push(tag);
+      }
+    });
+    return tags;
+  });
+
+  inputText.set("");
+  inputTags.set("");  
+  selectedTag.set("");
+  selectedTextTag.set("");
 }
 
 
-async function filter() {
-  if (filterTags.trim().length > 0 || filterText.trim().length > 0) {
-    const filteredTextList = await handleFilter(filterTags, filterText);
-    textList = filteredTextList;
+async function addTags(textId, newTags) {
+  const addedTags = await handleAddTags(textId, newTags);
+  textList.update((texts) => {
+    return texts.map((text) => {
+      if (text._id === textId) {
+        text.tags.push(...addedTags);
+      }
+      return text;
+    });
+  });
+}
+
+async function updateTextTags(textId, newTags) {
+  const updatedTags = await updateTags(textId, newTags);
+  textList.update((texts) => {
+    const textToUpdateIndex = texts.findIndex((text) => text._id === textId);
+    if (textToUpdateIndex !== -1) {
+      texts[textToUpdateIndex].tags = updatedTags;
+      return [...texts];
+    }
+    return texts;
+  });
+}
+
+async function filterTextChanged() {
+  const filterTagsValue = get(filterTags).trim(); // Convert array to a comma-separated string and then trim
+  const filterTextValue = get(filterText).trim(); // Trim the string
+
+  if (filterTagsValue.length > 0 || filterTextValue.length > 0) {
+    const filteredTextList = await handleFilter(filterTagsValue, filterTextValue);
+    textList.set(filteredTextList);
   } else {
-    textList = await handleGetAllTexts();
+    const allTexts = await handleGetAllTexts();
+    textList.set(allTexts);
   }
 }
-
-
-	async function getAllTexts() {
-		const allTexts = await handleGetAllTexts();
-		textList = allTexts;
-	}
-
-	async function addTags(textId, newTags) {
-		const addedTags = await handleAddTags(textId, newTags);
-		textList = textList.map((text) => {
-			if (text._id === textId) {
-				text.tags.push(...addedTags);
-			}
-			return text;
-		});
-	}
-
-	async function updateTextTags(textId, newTags) {
-		const updatedTags = await updateTags(textId, newTags);
-		const textToUpdateIndex = textList.findIndex((text) => text._id === textId);
-		if (textToUpdateIndex !== -1) {
-			textList[textToUpdateIndex].tags = updatedTags;
-			textList = textList.slice(); // Trigger reactivity by creating a new reference
-		}
-	}
-
-
-	async function filterTextChanged() {
-  if (filterTags.trim().length > 0 || filterText.trim().length > 0) {
-    textList = await handleFilter(filterTags, filterText);
-  } else {
-    textList = await handleGetAllTexts();
-  }
-}
-
 
 export {
-  inputText, inputTags, filterTags, textList, availableTags, nlpQuery, nlpQueryResult,
-  selectedTextTag, filterText, selectedTag,
-  onSubmitQuery, submit, filter, getAllTexts, addTags, updateTextTags, filterTextChanged
+  onSubmitQuery, submit, getAllTexts, addTags, updateTextTags, filterTextChanged
 };
