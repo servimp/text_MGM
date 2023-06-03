@@ -107,7 +107,7 @@ async def process_nlp_query_route(query: str, idChat: _uuid, model: str = "gpt-4
             # Parse the response JSON
             response_json = json.loads(response)
 
-            # Check if 'content' field is in the response
+            # Check if 'content' field is in the response - ss
             if 'content' in response_json.get('choices', [{}])[0].get('delta', {}):
                 # Accumulate the assistant's response
                 assistant_response += response_json['choices'][0]['delta']['content']
