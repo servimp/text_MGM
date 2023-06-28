@@ -1,0 +1,45 @@
+version: '3.7'
+services:
+  app:
+    build: ./fastapi-backend
+    volumes:
+      - ./fastapi-backend/kubeconfig.yaml:/root/.kube/config
+      - /home/luisrueda/.minikube/ca.crt:/home/luisrueda/.minikube/ca.crt
+      - /home/luisrueda/.minikube/profiles/minikube/client.crt:/home/luisrueda/.minikube/profiles/minikube/client.crt
+      - /home/luisrueda/.minikube/profiles/minikube/client.key:/home/luisrueda/.minikube/profiles/minikube/client.key
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+      - memcached
+    environment:
+      - DATABASE_URL=mongodb://db:27017
+    env_file:
+      - ./fastapi-backend/.env
+  memcached:
+    image: memcached:latest
+    ports:
+      - "11211:11211"
+  db:
+    image: mongo:latest
+    volumes:
+      - mongo_data:/data/db
+  frontend:
+    build: ./my-skeleton-app
+    ports:
+      - 5173:80
+  ssh-service:
+    build: ./fastapi-ssh-service
+    volumes:
+      - ./fastapi-backend/kubeconfig.yaml:/root/.kube/config
+      - /home/luisrueda/.minikube/ca.crt:/home/luisrueda/.minikube/ca.crt
+      - /home/luisrueda/.minikube/profiles/minikube/client.crt:/home/luisrueda/.minikube/profiles/minikube/client.crt
+      - /home/luisrueda/.minikube/profiles/minikube/client.key:/home/luisrueda/.minikube/profiles/minikube/client.key
+    environment:
+      - KUBECONFIG_PATH=/root/.kube/config
+    ports:
+      - 50051:50051
+    depends_on:
+      - memcached
+volumes:
+  mongo_data: {}

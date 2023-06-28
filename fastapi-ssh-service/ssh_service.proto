@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package ssh_service;
+
+service SshService {
+    rpc RunCommand (stream RunCommandRequest) returns (stream RunCommandResponse) {}
+    rpc RemoveConnection (RemoveConnectionRequest) returns (RemoveConnectionResponse) {}
+}
+
+message RunCommandRequest {
+    string user_id = 1;
+    string environment_id = 2;
+    string command = 3;
+}
+
+message RunCommandResponse {
+    string command = 1;
+    string line = 2;
+}
+
+message RemoveConnectionRequest {
+    string user_id = 1;
+    string environment_id = 2;
+}
+
+message RemoveConnectionResponse {
+    string status = 1;
+}

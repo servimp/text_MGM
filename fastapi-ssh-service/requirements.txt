@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+grpcio
+grpcio-tools
+python-memcached
+asyncssh
+kubernetes
+asyncio
+python-dotenv
