@@ -1,5 +1,5 @@
 # .gitignore
-
+minikube-linux-amd64
 # Python
 __pycache__/
 *.pyc
